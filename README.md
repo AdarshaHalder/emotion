@@ -1,197 +1,215 @@
-# 🎙️ AI Voice Companion - Emotional Support PoC
+# AI Voice Companion
 
-A complete working prototype of an AI-powered voice companion that provides emotional support through natural conversation.
+An AI-powered voice companion that listens, understands your emotions, and responds in a natural human voice — including the cloned voice of a family member.
 
-## 🎯 Features
+---
 
-- ✅ **Voice Input**: Push-to-talk recording with speech-to-text
-- ✅ **Mood Detection**: Rule-based keyword detection (positive/neutral/negative)
-- ✅ **AI Response**: Empathetic responses using GPT-3.5
-- ✅ **Voice Output**: Natural-sounding voice using ElevenLabs
-- ✅ **Voice Selection**: Choose from multiple voice profiles
-- ✅ **Voice Cloning**: Clone voices of loved ones (Mom, Dad, Wife, etc.) 🌟
-- ✅ **Alert Simulation**: Notification when negative mood is detected
-- ✅ **Conversation History**: Track the full conversation
-- ✅ **Clean UI**: Simple Streamlit interface
-- ✅ **Desktop App**: Native desktop application (PyWebView)
+## What It Does
 
-## 🚀 Quick Start
+- Records your voice and transcribes it using OpenAI Whisper
+- Detects your emotional mood (positive / neutral / negative) using GPT
+- Replies with an empathetic, human-sounding AI response
+- Speaks the response aloud using ElevenLabs voice synthesis
+- Automatically switches to a cloned family member's voice when you're feeling low
+- Supports 18 languages including Hindi, Tamil, Telugu, Bengali, and more
 
-### 1. Install Dependencies
+---
 
+## Requirements
+
+Before you begin, make sure you have the following installed on your machine:
+
+- **Python 3.10 or higher** — [Download here](https://www.python.org/downloads/)
+- **Git** — [Download here](https://git-scm.com/downloads)
+- A **microphone** connected to your computer
+
+You will also need API keys for:
+
+- **OpenAI** — [Get your key here](https://platform.openai.com/api-keys)
+- **ElevenLabs** — [Get your key here](https://elevenlabs.io/app/settings/api-keys)
+
+---
+
+## Setup Instructions
+
+### Step 1 — Clone the Repository
+
+Open your terminal and run:
+
+```bash
+git clone https://github.com/AdarshaHalder/emotion.git
+cd emotion
+```
+
+---
+
+### Step 2 — Create a Virtual Environment
+
+```bash
+# macOS / Linux
+python3 -m venv venv
+source venv/bin/activate
+
+# Windows
+python -m venv venv
+venv\Scripts\activate
+```
+
+---
+
+### Step 3 — Install Dependencies
+
+**For web / browser use:**
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Setup API Keys
+**For desktop use (with full microphone support for voice cloning):**
+```bash
+pip install -r requirements-desktop.txt
+```
 
-Create a `.env` file in the project root:
+---
+
+### Step 4 — Configure API Keys
+
+Copy the example environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and add your API keys:
+Open the `.env` file in any text editor and fill in your keys:
 
 ```env
-OPENAI_API_KEY=sk-your-openai-api-key-here
-ELEVENLABS_API_KEY=your-elevenlabs-api-key-here
+OPENAI_API_KEY=sk-your-openai-key-here
+ELEVENLABS_API_KEY=your-elevenlabs-key-here
 ```
 
-**Get your API keys:**
-- OpenAI: https://platform.openai.com/api-keys
-- ElevenLabs: https://elevenlabs.io/app/settings/api-keys
+Save the file.
 
-### 3. Run the App
+---
 
-**Option A: Desktop App (Recommended)**
-
-```bash
-# macOS/Linux
-chmod +x run_desktop.sh
-./run_desktop.sh
-
-# Windows
-run_desktop.bat
-```
-
-**Option B: Web Browser**
+### Step 5 — Run the App
 
 ```bash
 streamlit run app.py
 ```
 
-The app will open in your browser at `http://localhost:8501`
-
-## 📁 Project Structure
-
-```
-/EMOTION
-├── app.py                 # Main Streamlit application
-├── desktop_app.py         # Desktop app launcher (PyWebView)
-├── voice_input.py         # Audio recording & speech-to-text
-├── mood_detection.py      # Rule-based mood classification
-├── ai_response.py         # LLM response generation
-├── voice_output.py        # Text-to-speech conversion
-├── config.py             # Configuration & settings
-├── requirements.txt      # Python dependencies
-├── run_desktop.sh        # Desktop launcher (macOS/Linux)
-├── run_desktop.bat       # Desktop launcher (Windows)
-├── .env.example         # Example environment file
-└── README.md            # This file
-```
-
-## 🎮 How to Use
-
-1. **Start the app**: `./run_desktop.sh` or `streamlit run app.py`
-2. **Select a voice**: Choose from the sidebar dropdown
-3. **Click "Push to Talk"**: Record your message (default 5 seconds)
-4. **Wait for response**: AI will analyze, respond, and speak
-5. **View mood**: Check detected mood in the conversation
-6. **Continue talking**: Build a natural conversation
-
-### 🎙️ Clone Family Voices (New!)
-
-Want AI to speak in Mom's or Dad's voice?
-
-1. **Prepare audio samples**: 1-5 recordings (30 sec each)
-2. **Go to sidebar** → "Clone a Voice"
-3. **Upload samples**: MP3/WAV files
-4. **Click "Clone Voice"**: Wait 1-2 minutes
-5. **Select cloned voice**: Choose from dropdown!
-
-See [VOICE_CLONING_GUIDE.md](VOICE_CLONING_GUIDE.md) for detailed instructions.
-
-## 🧠 How It Works
-
-### Voice Input Flow
-```
-Microphone → Audio Recording → Whisper API → Text
-```
-
-### Mood Detection
-Simple keyword matching:
-- **Negative**: sad, lonely, depressed, upset, anxious...
-- **Positive**: happy, great, awesome, excited...
-- **Neutral**: Everything else
-
-### AI Response
-```
-User Text + Mood + History → GPT-3.5 → Empathetic Response
-```
-
-### Voice Output
-```
-AI Text → ElevenLabs API → Audio File → Play in Browser
-```
-
-## ⚙️ Configuration
-
-Edit `config.py` to customize:
-
-- **Voices**: Add more ElevenLabs voice IDs
-- **Recording duration**: Change default recording time
-- **Mood keywords**: Modify keyword lists
-- **System prompt**: Adjust AI personality
-
-## 🔧 Troubleshooting
-
-### No audio input detected
-- Check microphone permissions
-- Test with: `python -c "import sounddevice; print(sounddevice.query_devices())"`
-
-### API errors
-- Verify API keys are correct in `.env`
-- Check API credit balance
-- Ensure internet connection
-
-### Module not found
-- Run: `pip install -r requirements.txt`
-- Use Python 3.8+
-
-## 🎨 Customization Ideas
-
-1. **Add more voices**: Get voice IDs from ElevenLabs and add to `config.py`
-2. **Better mood detection**: Use sentiment analysis library
-3. **Export conversation**: Add button to save chat history
-4. **Multiple languages**: Change Whisper language parameter
-5. **Custom triggers**: Add more alert conditions
-
-## 📝 API Costs (Estimate)
-
-- **OpenAI Whisper**: ~$0.006 per minute of audio
-- **OpenAI GPT-3.5**: ~$0.002 per conversation
-- **ElevenLabs**: Varies by plan (free tier: 10k characters/month)
-
-**For 1 week PoC**: ~$5-10 total
-
-## ⚠️ Important Notes
-
-- This is a **PROTOTYPE** for demonstration only
-- NOT for production use
-- NOT a replacement for professional mental health support
-- Alert system is **simulated** (no real notifications)
-
-## 🤝 Contributing
-
-This is a PoC. Feel free to:
-- Fork and experiment
-- Add features
-- Improve UI
-- Share feedback
-
-## 📄 License
-
-MIT License - Free to use and modify
-
-## 🙏 Acknowledgments
-
-- OpenAI for Whisper & GPT
-- ElevenLabs for voice synthesis
-- Streamlit for the UI framework
+The app will open automatically in your browser at `http://localhost:8501`
 
 ---
 
-**Built with ❤️ as a 1-week PoC**
+## How to Use
 
-**Questions?** Check the code comments or API documentation.
+### Starting a Conversation
+
+1. Open the app in your browser
+2. Click the **microphone button** under "Voice Input"
+3. Speak your message, then click **stop**
+4. The app will transcribe, detect your mood, generate a response, and speak it back to you
+
+### Changing the Voice
+
+In the left sidebar, use the **"Choose a voice"** dropdown to select from several built-in voices.
+
+### Changing the Language
+
+In the left sidebar, select your preferred language from the **"Language"** dropdown. The app will transcribe and respond in that language.
+
+### Cloning a Family Member's Voice
+
+You can make the AI respond in the voice of someone you know (e.g., Mom, Dad):
+
+1. In the sidebar, click **"Add Family Member Voice"**
+2. Enter a name (e.g., `Mom`)
+3. Upload 1–5 audio recordings of that person (MP3 or WAV, 30 seconds each recommended)
+4. Click **"Clone Voice"**
+5. The cloned voice will appear in the voice dropdown
+
+> Note: Voice cloning requires an ElevenLabs paid plan (Starter or above).
+
+When a negative mood is detected, the app automatically switches to the cloned voice for emotional support.
+
+---
+
+## Running as a Desktop App (macOS)
+
+If you received a `.dmg` file:
+
+1. Double-click `AIVoiceCompanion.dmg`
+2. Drag `AIVoiceCompanion` into your **Applications** folder
+3. Open the app from Applications
+
+No Python installation required for the desktop version.
+
+---
+
+## Online Version
+
+The app is also accessible online (no installation needed):
+
+> [https://emotion-scriptures.streamlit.app](https://emotion-scriptures.streamlit.app)
+
+> Note: The online version uses your browser's microphone. The voice cloning live-recording feature is only available in the desktop app.
+
+---
+
+## Project Structure
+
+```
+emotion/
+├── app.py                  # Main Streamlit application
+├── config.py               # API keys and settings
+├── ai_response.py          # GPT response generation
+├── mood_detection.py       # GPT-based mood classification
+├── voice_input.py          # Audio recording and transcription
+├── voice_output.py         # ElevenLabs text-to-speech
+├── voice_cloning.py        # Voice cloning via ElevenLabs
+├── desktop_app.py          # Desktop launcher (PyWebView)
+├── requirements.txt        # Dependencies for web/cloud
+├── requirements-desktop.txt# Dependencies for desktop
+├── build_mac.sh            # Build script for macOS .dmg
+├── build_windows.bat       # Build script for Windows .exe
+├── EMOTION.spec            # PyInstaller configuration
+└── .env.example            # Environment variable template
+```
+
+---
+
+## Troubleshooting
+
+**Microphone not working**
+- Make sure your browser has microphone permission enabled
+- On macOS, go to System Settings → Privacy & Security → Microphone
+
+**API errors**
+- Double-check your API keys in the `.env` file
+- Make sure you have credits/quota available on OpenAI and ElevenLabs
+
+**Module not found**
+- Make sure your virtual environment is activated before running
+- Re-run `pip install -r requirements.txt`
+
+**App not opening**
+- Make sure port 8501 is not in use
+- Try: `streamlit run app.py --server.port 8502`
+
+---
+
+## API Cost Estimate (for reference)
+
+| Service | Usage | Approx. Cost |
+|---|---|---|
+| OpenAI Whisper | Per voice message | ~$0.006 / minute |
+| OpenAI GPT-3.5 | Per response | ~$0.002 / conversation |
+| ElevenLabs TTS | Per response | Free tier: 10k chars/month |
+
+For a 1-week demo: approximately **$5–10 total**.
+
+---
+
+## Support
+
+For any issues, contact the development team or raise an issue on GitHub:
+[https://github.com/AdarshaHalder/emotion/issues](https://github.com/AdarshaHalder/emotion/issues)
