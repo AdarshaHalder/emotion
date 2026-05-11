@@ -6,12 +6,21 @@ Store API keys and settings here
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
-# API Keys
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
+def _secret(key):
+    """Read from .env first, then fall back to Streamlit Cloud secrets."""
+    val = os.getenv(key, "")
+    if not val:
+        try:
+            import streamlit as st
+            val = st.secrets.get(key, "")
+        except Exception:
+            pass
+    return val
+
+OPENAI_API_KEY = _secret("OPENAI_API_KEY")
+ELEVENLABS_API_KEY = _secret("ELEVENLABS_API_KEY")
 
 # Voice Settings
 AVAILABLE_VOICES = {

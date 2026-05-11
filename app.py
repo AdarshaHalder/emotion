@@ -5,12 +5,22 @@ AI Voice Companion - Main Streamlit App
 import streamlit as st
 import time
 import os
-from voice_input import process_voice_input, record_voice_sample
+from voice_input import transcribe_audio_bytes, record_voice_sample
 from mood_detection import detect_mood, get_mood_emoji, analyze_mood_with_details
 from ai_response import generate_ai_response, build_conversation_history
 from voice_output import text_to_speech, get_audio_duration
 from voice_cloning import get_user_voices, upload_voice_samples, delete_cloned_voice
 from config import AVAILABLE_VOICES, OPENAI_API_KEY, ELEVENLABS_API_KEY, SUPPORTED_LANGUAGES
+
+def _is_desktop():
+    """True when sounddevice is available (local/desktop), False on cloud."""
+    try:
+        import sounddevice  # noqa: F401
+        return True
+    except Exception:
+        return False
+
+IS_DESKTOP = _is_desktop()
 
 # Page configuration
 st.set_page_config(
@@ -113,19 +123,22 @@ with st.sidebar:
         voice_name = st.text_input("Voice Name (e.g., 'Mom', 'Dad')", key="clone_name")
         voice_desc = st.text_input("Description (optional)", key="clone_desc")
 
-        # --- Live mic recording ---
-        st.markdown("**🎙️ Record Live Samples**")
-        live_duration = st.slider("Sample duration (seconds)", 5, 30, 10, key="live_sample_dur")
+        # --- Live mic recording (desktop only) ---
+        if IS_DESKTOP:
+            st.markdown("**🎙️ Record Live Samples**")
+            live_duration = st.slider("Sample duration (seconds)", 5, 30, 10, key="live_sample_dur")
 
-        if st.button("⏺️ Record from Mic", key="record_live_sample"):
-            with st.spinner(f"Recording for {live_duration}s... speak now!"):
-                path = record_voice_sample(duration=live_duration)
-            if path:
-                label = f"Live sample {len(st.session_state.live_voice_samples) + 1}"
-                st.session_state.live_voice_samples.append((label, path))
-                st.success(f"✅ {label} captured")
-            else:
-                st.error("❌ Recording failed — check microphone permissions")
+            if st.button("⏺️ Record from Mic", key="record_live_sample"):
+                with st.spinner(f"Recording for {live_duration}s... speak now!"):
+                    path = record_voice_sample(duration=live_duration)
+                if path:
+                    label = f"Live sample {len(st.session_state.live_voice_samples) + 1}"
+                    st.session_state.live_voice_samples.append((label, path))
+                    st.success(f"✅ {label} captured")
+                else:
+                    st.error("❌ Recording failed — check microphone permissions")
+        else:
+            st.info("💡 Live mic recording available in the desktop app. Upload files below.")
 
         if st.session_state.live_voice_samples:
             st.caption(f"{len(st.session_state.live_voice_samples)} live sample(s) recorded:")
@@ -248,103 +261,76 @@ st.divider()
 
 # Voice input section
 st.subheader("🎤 Voice Input")
+st.caption("Click the mic button, speak, then click stop to send your message.")
 
-col1, col2 = st.columns([2, 1])
+audio_value = st.audio_input("🔴 Push to Talk", key=f"voice_input_{st.session_state.get('audio_key', 0)}")
 
-with col1:
-    record_button = st.button(
-        "🔴 Push to Talk",
-        use_container_width=True,
-        type="primary"
-    )
+def _process_turn(user_text):
+    """Run mood → AI → TTS pipeline for a transcribed user message."""
+    st.success(f"**You said:** {user_text}")
 
-with col2:
-    st.caption(f"Will record for {st.session_state.recording_duration}s")
+    with st.spinner("🧠 Analyzing mood..."):
+        mood_info = analyze_mood_with_details(user_text)
+        mood = mood_info["mood"]
+        emoji = mood_info["emoji"]
+        st.info(f"**Detected mood:** {emoji} {mood.capitalize()}")
 
-# Process voice input
-if record_button:
+        if mood == "negative":
+            st.warning("⚠️ **Family members have been notified (simulation)**")
+            cloned = st.session_state.get("cloned_voices", {})
+            if cloned:
+                first_name, first_id = next(iter(cloned.items()))
+                st.session_state.voice_id = first_id
+                st.info(f"🎙️ Switching to **{first_name}'s** voice for support")
+
+    with st.spinner("💭 Thinking..."):
+        history = build_conversation_history(
+            [(role, msg) for role, msg, _ in st.session_state.conversation_history]
+        )
+        ai_text = generate_ai_response(user_text, history, mood, language=st.session_state.language)
+        st.success(f"**AI:** {ai_text}")
+
+    with st.spinner("🔊 Generating voice..."):
+        audio_file = text_to_speech(ai_text, st.session_state.voice_id, mood)
+
+        if audio_file:
+            with open(audio_file, "rb") as f:
+                resp_bytes = f.read()
+            audio_duration = get_audio_duration(audio_file)
+            os.remove(audio_file)
+
+            st.success("🔊 **Playing audio response...**")
+            st.audio(resp_bytes, format="audio/mp3", autoplay=True)
+            st.download_button("📥 Download Response", data=resp_bytes,
+                               file_name="ai_response.mp3", mime="audio/mp3")
+
+            st.session_state.conversation_history.append(("user", user_text, mood))
+            st.session_state.conversation_history.append(("assistant", ai_text, None))
+            st.session_state["audio_key"] = st.session_state.get("audio_key", 0) + 1
+
+            time.sleep(max(audio_duration + 1.0, 3.0))
+            st.rerun()
+        else:
+            st.error("Failed to generate voice response")
+            st.session_state.conversation_history.append(("user", user_text, mood))
+            st.session_state.conversation_history.append(("assistant", ai_text, None))
+            st.session_state["audio_key"] = st.session_state.get("audio_key", 0) + 1
+            time.sleep(0.5)
+            st.rerun()
+
+if audio_value:
     if not OPENAI_API_KEY or not ELEVENLABS_API_KEY:
         st.error("⚠️ Please configure API keys in .env file")
     else:
-        with st.spinner("🎤 Recording..."):
+        with st.spinner("🎤 Transcribing..."):
             try:
-                # Step 1: Record and transcribe
-                user_text = process_voice_input(duration=st.session_state.recording_duration, language=st.session_state.language)
-                
+                user_text = transcribe_audio_bytes(audio_value.read(), language=st.session_state.language)
                 if user_text:
-                    st.success(f"**You said:** {user_text}")
-                    
-                    # Step 2: Detect mood
-                    with st.spinner("🧠 Analyzing mood..."):
-                        mood_info = analyze_mood_with_details(user_text)
-                        mood = mood_info["mood"]
-                        emoji = mood_info["emoji"]
-                        
-                        st.info(f"**Detected mood:** {emoji} {mood.capitalize()}")
-                        
-                        # Show alert if negative mood
-                        if mood == "negative":
-                            st.warning("⚠️ **Family members have been notified (simulation)**")
-                            # Auto-switch to a cloned family voice for comfort
-                            cloned = st.session_state.get("cloned_voices", {})
-                            if cloned:
-                                first_name, first_id = next(iter(cloned.items()))
-                                st.session_state.voice_id = first_id
-                                st.info(f"🎙️ Switching to **{first_name}'s** voice for support")
-                    
-                    # Step 3: Generate AI response
-                    with st.spinner("💭 Thinking..."):
-                        history = build_conversation_history(
-                            [(role, msg) for role, msg, _ in st.session_state.conversation_history]
-                        )
-                        ai_text = generate_ai_response(user_text, history, mood, language=st.session_state.language)
-                        st.success(f"**AI:** {ai_text}")
-                    
-                    # Step 4: Convert to speech
-                    with st.spinner("🔊 Generating voice..."):
-                        voice_id = st.session_state.voice_id
-                        audio_file = text_to_speech(ai_text, voice_id, mood)
-                        
-                        if audio_file:
-                            with open(audio_file, "rb") as f:
-                                audio_bytes = f.read()
-
-                            audio_duration = get_audio_duration(audio_file)
-
-                            st.success("🔊 **Playing audio response...**")
-                            st.audio(audio_bytes, format="audio/mp3", autoplay=True)
-
-                            st.download_button(
-                                label="📥 Download Audio Response",
-                                data=audio_bytes,
-                                file_name="ai_response.mp3",
-                                mime="audio/mp3"
-                            )
-
-                            os.remove(audio_file)
-
-                            # Step 5: Update conversation history
-                            st.session_state.conversation_history.append(("user", user_text, mood))
-                            st.session_state.conversation_history.append(("assistant", ai_text, None))
-
-                            # Wait for audio to finish before rerendering
-                            wait = max(audio_duration + 1.0, 3.0)
-                            time.sleep(wait)
-                            st.rerun()
-                        else:
-                            st.error("Failed to generate voice response")
-
-                            st.session_state.conversation_history.append(("user", user_text, mood))
-                            st.session_state.conversation_history.append(("assistant", ai_text, None))
-                            time.sleep(0.5)
-                            st.rerun()
-                
+                    _process_turn(user_text)
                 else:
                     st.error("❌ Could not transcribe audio. Please try again.")
-            
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
-                st.error("Please check your API keys and try again.")
 
 # Footer
 st.divider()

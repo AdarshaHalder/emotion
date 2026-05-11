@@ -30,5 +30,5 @@ temp/
 .DS_Store
 Thumbs.db
 
-# Streamlit
-.streamlit/
+# Streamlit — ignore secrets, commit config
+.streamlit/secrets.toml
