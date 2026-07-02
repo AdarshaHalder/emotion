@@ -34,7 +34,12 @@ _VOICE_SETTINGS = {
 }
 
 
-def text_to_speech(text, voice_id, mood="neutral"):
+# Languages NOT officially covered by eleven_multilingual_v2 → use the broader
+# eleven_turbo_v2_5 model so pronunciation is correct instead of garbled.
+_EXTENDED_LANGS = {"te", "bn", "mr", "gu", "pa"}
+
+
+def text_to_speech(text, voice_id, mood="neutral", language="en"):
     """
     Convert text to speech using ElevenLabs API.
 
@@ -42,6 +47,7 @@ def text_to_speech(text, voice_id, mood="neutral"):
         text: text to speak
         voice_id: ElevenLabs voice ID
         mood: "positive", "negative", or "neutral" — tunes expressiveness
+        language: ISO-639-1 code — selects the best-fitting TTS model
 
     Returns:
         path to MP3 file, or None on failure
@@ -57,10 +63,13 @@ def text_to_speech(text, voice_id, mood="neutral"):
 
         settings = _VOICE_SETTINGS.get(mood, _VOICE_SETTINGS["neutral"])
 
+        # eleven_multilingual_v2 = highest quality for its supported languages;
+        # extended Indian languages need turbo_v2_5 for correct pronunciation.
+        model_id = "eleven_turbo_v2_5" if language in _EXTENDED_LANGS else "eleven_multilingual_v2"
+
         data = {
             "text": text,
-            # eleven_multilingual_v2 = highest quality, most human-sounding
-            "model_id": "eleven_multilingual_v2",
+            "model_id": model_id,
             "voice_settings": settings,
         }
 

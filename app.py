@@ -309,7 +309,7 @@ def _process_turn(user_text):
         st.success(f"**AI:** {ai_text}")
 
     with st.spinner("🔊 Generating voice..."):
-        audio_file = text_to_speech(ai_text, st.session_state.voice_id, mood)
+        audio_file = text_to_speech(ai_text, st.session_state.voice_id, mood, language=st.session_state.language)
 
         if audio_file:
             with open(audio_file, "rb") as f:

@@ -25,7 +25,11 @@ def generate_ai_response(user_message, conversation_history=None, mood=None, lan
         # Build conversation messages
         from config import SUPPORTED_LANGUAGES
         lang_name = SUPPORTED_LANGUAGES.get(language, "English")
-        system = SYSTEM_PROMPT + f"\n\nALWAYS respond in {lang_name}. Even if the user writes in another language, reply in {lang_name}."
+        system = SYSTEM_PROMPT + (
+            f"\n\nALWAYS respond in {lang_name}. Even if the user writes in another "
+            f"language, reply ONLY in natural, grammatically correct {lang_name} using "
+            f"its native script. Never mix in English words or fall back to English."
+        )
 
         # Inject mood-aware layer
         if mood == "negative":
@@ -44,7 +48,7 @@ def generate_ai_response(user_message, conversation_history=None, mood=None, lan
 
         # Generate response
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",  # far stronger at Tamil/Telugu & other non-English than gpt-3.5
             messages=messages,
             temperature=0.9,
             max_tokens=200
