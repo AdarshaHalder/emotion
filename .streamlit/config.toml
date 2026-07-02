@@ -1,5 +1,8 @@
 [server]
 maxUploadSize = 50
 
+[client]
+toolbarMode = "minimal"
+
 [theme]
 base = "dark"

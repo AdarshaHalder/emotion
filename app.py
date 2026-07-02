@@ -29,6 +29,24 @@ st.set_page_config(
     layout="centered"
 )
 
+# Hide Streamlit / Community Cloud branding (toolbar, footer, viewer badge)
+st.markdown(
+    """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    [data-testid="stToolbar"] {display: none !important;}
+    [data-testid="stDecoration"] {display: none !important;}
+    [data-testid="stStatusWidget"] {display: none !important;}
+    [data-testid="stAppViewerBadge"] {display: none !important;}
+    [class*="viewerBadge"] {display: none !important;}
+    a[href*="streamlit.io/cloud"] {display: none !important;}
+    a[href*="share.streamlit.io/user"] {display: none !important;}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # Initialize session state
 if "conversation_history" not in st.session_state:
     st.session_state.conversation_history = []
