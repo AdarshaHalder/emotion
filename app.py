@@ -29,7 +29,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# Hide Streamlit / Community Cloud branding (toolbar, footer, viewer badge)
+# Hide Streamlit / Community Cloud branding (toolbar, footer, creator/profile badge)
 st.markdown(
     """
     <style>
@@ -38,10 +38,17 @@ st.markdown(
     [data-testid="stToolbar"] {display: none !important;}
     [data-testid="stDecoration"] {display: none !important;}
     [data-testid="stStatusWidget"] {display: none !important;}
-    [data-testid="stAppViewerBadge"] {display: none !important;}
-    [class*="viewerBadge"] {display: none !important;}
+    /* Bottom-right creator / profile badge (avatar + crown) and viewer badge */
+    [data-testid="stAppViewerBadge"],
+    [data-testid="stAppCreatorAvatar"],
+    [class*="_profileContainer_"],
+    [class*="_profileButton_"],
+    [class*="_profilePreview_"],
+    [class*="_profileImage_"],
+    [class*="_viewerBadge_"],
+    [class*="viewerBadge"],
+    a[href*="share.streamlit.io/user"],
     a[href*="streamlit.io/cloud"] {display: none !important;}
-    a[href*="share.streamlit.io/user"] {display: none !important;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -353,3 +360,37 @@ if audio_value:
 # Footer
 st.divider()
 st.caption("🤖 AI Voice Companion PoC • Built with Streamlit, OpenAI & ElevenLabs")
+
+# JS fallback: remove the Community Cloud creator/profile badge from the live DOM.
+# st.markdown strips <script>, so we run it from a zero-height component iframe that
+# reaches into the parent document (same-origin) and keeps it hidden across reruns.
+import streamlit.components.v1 as components
+
+components.html(
+    """
+    <script>
+    const strip = () => {
+      try {
+        const doc = window.parent && window.parent.document;
+        if (!doc) return;
+        const sels = [
+          '[data-testid="stAppViewerBadge"]',
+          '[data-testid="stAppCreatorAvatar"]',
+          '[class*="_profileContainer_"]',
+          '[class*="_profileButton_"]',
+          '[class*="_viewerBadge_"]',
+          '[class*="viewerBadge"]',
+          'a[href*="share.streamlit.io/user"]'
+        ];
+        sels.forEach(s => doc.querySelectorAll(s).forEach(el => {
+          el.style.display = 'none';
+          if (el.parentElement) el.parentElement.style.display = 'none';
+        }));
+      } catch (e) { /* cross-origin: ignore */ }
+    };
+    strip();
+    setInterval(strip, 500);
+    </script>
+    """,
+    height=0,
+)
