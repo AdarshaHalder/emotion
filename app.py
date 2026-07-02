@@ -49,7 +49,18 @@ st.markdown(
     [class*="viewerBadge"],
     a[href*="share.streamlit.io/user"],
     a[href*="streamlit.io/cloud"] {display: none !important;}
+    /* Mask that covers the "Hosted with Streamlit" badge in the bottom-right corner */
+    .st-badge-cover {
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        width: 480px;
+        height: 80px;
+        background: #0e1117;
+        z-index: 2147483647;
+    }
     </style>
+    <div class="st-badge-cover"></div>
     """,
     unsafe_allow_html=True,
 )
