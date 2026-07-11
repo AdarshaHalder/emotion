@@ -38,6 +38,27 @@ _VOICE_SETTINGS = {
 # eleven_turbo_v2_5 model so pronunciation is correct instead of garbled.
 _EXTENDED_LANGS = {"te", "bn", "mr", "gu", "pa"}
 
+# Unicode script ranges for those languages, so we can route correctly even in
+# auto-detect mode (when we only have the text, not a language code).
+# Note: Tamil & Devanagari/Hindi are well-supported by multilingual_v2, so excluded.
+_EXTENDED_SCRIPT_RANGES = (
+    (0x0980, 0x09FF),  # Bengali / Assamese
+    (0x0C00, 0x0C7F),  # Telugu
+    (0x0A80, 0x0AFF),  # Gujarati
+    (0x0A00, 0x0A7F),  # Gurmukhi (Punjabi)
+)
+
+
+def _needs_extended_model(text, language):
+    """True if the text/language needs eleven_turbo_v2_5 instead of multilingual_v2."""
+    if language in _EXTENDED_LANGS:
+        return True
+    for ch in text:
+        cp = ord(ch)
+        if any(lo <= cp <= hi for lo, hi in _EXTENDED_SCRIPT_RANGES):
+            return True
+    return False
+
 
 def text_to_speech(text, voice_id, mood="neutral", language="en"):
     """
@@ -65,7 +86,7 @@ def text_to_speech(text, voice_id, mood="neutral", language="en"):
 
         # eleven_multilingual_v2 = highest quality for its supported languages;
         # extended Indian languages need turbo_v2_5 for correct pronunciation.
-        model_id = "eleven_turbo_v2_5" if language in _EXTENDED_LANGS else "eleven_multilingual_v2"
+        model_id = "eleven_turbo_v2_5" if _needs_extended_model(text, language) else "eleven_multilingual_v2"
 
         data = {
             "text": text,

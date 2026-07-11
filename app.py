@@ -82,7 +82,7 @@ if "cloned_voices" not in st.session_state:
     st.session_state.cloned_voices = {}
 
 if "language" not in st.session_state:
-    st.session_state.language = "en"
+    st.session_state.language = "auto"
 
 
 # App header
@@ -118,10 +118,11 @@ with st.sidebar:
     st.session_state.selected_voice = selected_voice_name
     st.session_state.voice_id = combined_voices[selected_voice_name]
     
-    # Language selection
+    # Language selection — "Auto-detect" lets Whisper detect the spoken language
+    # and the AI reply in that same language (no need to set it manually).
     st.subheader("🌐 Language")
-    lang_names = list(SUPPORTED_LANGUAGES.values())
-    lang_codes = list(SUPPORTED_LANGUAGES.keys())
+    lang_codes = ["auto"] + list(SUPPORTED_LANGUAGES.keys())
+    lang_names = ["🌐 Auto-detect (recommended)"] + list(SUPPORTED_LANGUAGES.values())
     current_idx = lang_codes.index(st.session_state.language) if st.session_state.language in lang_codes else 0
     selected_lang_name = st.selectbox("Speak in:", lang_names, index=current_idx, key="lang_selector")
     st.session_state.language = lang_codes[lang_names.index(selected_lang_name)]

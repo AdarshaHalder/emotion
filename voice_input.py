@@ -47,11 +47,12 @@ def speech_to_text(audio_file_path, language="en"):
     try:
         client = OpenAI(api_key=OPENAI_API_KEY)
         with open(audio_file_path, "rb") as audio_file:
-            transcript = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file,
-                language=language,
-            )
+            kwargs = {"model": "whisper-1", "file": audio_file}
+            # "auto"/None → let Whisper detect the spoken language (native script).
+            # A specific ISO code forces that language.
+            if language and language != "auto":
+                kwargs["language"] = language
+            transcript = client.audio.transcriptions.create(**kwargs)
         return transcript.text
     except Exception as e:
         print(f"Error in speech-to-text: {e}")

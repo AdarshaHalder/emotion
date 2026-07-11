@@ -24,12 +24,22 @@ def generate_ai_response(user_message, conversation_history=None, mood=None, lan
         
         # Build conversation messages
         from config import SUPPORTED_LANGUAGES
-        lang_name = SUPPORTED_LANGUAGES.get(language, "English")
-        system = SYSTEM_PROMPT + (
-            f"\n\nALWAYS respond in {lang_name}. Even if the user writes in another "
-            f"language, reply ONLY in natural, grammatically correct {lang_name} using "
-            f"its native script. Never mix in English words or fall back to English."
-        )
+        if not language or language == "auto":
+            # Mirror whatever language the user actually spoke.
+            system = SYSTEM_PROMPT + (
+                "\n\nDetect the language of the user's message and reply ONLY in that "
+                "same language, using its native script. If they wrote in Bengali, reply "
+                "in Bengali; if Tamil, reply in Tamil; and so on. Never switch to English "
+                "unless the user actually wrote in English. Keep it natural and "
+                "grammatically correct."
+            )
+        else:
+            lang_name = SUPPORTED_LANGUAGES.get(language, "English")
+            system = SYSTEM_PROMPT + (
+                f"\n\nALWAYS respond in {lang_name}. Even if the user writes in another "
+                f"language, reply ONLY in natural, grammatically correct {lang_name} using "
+                f"its native script. Never mix in English words or fall back to English."
+            )
 
         # Inject mood-aware layer
         if mood == "negative":
