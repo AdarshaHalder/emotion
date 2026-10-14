@@ -62,7 +62,7 @@ def speech_to_text(audio_file_path, language="en"):
             os.remove(audio_file_path)
 
 
-def transcribe_audio_bytes(audio_bytes, language="en"):
+def transcribe_audio_bytes(audio_bytes, language="en", suffix=".wav"):
     """
     Transcribe raw audio bytes from st.audio_input() via Whisper.
     Works on both cloud and desktop.
@@ -70,12 +70,13 @@ def transcribe_audio_bytes(audio_bytes, language="en"):
     Args:
         audio_bytes: bytes-like object (e.g. from st.audio_input().read())
         language: ISO-639-1 code
+        suffix: file extension matching the audio format (Whisper sniffs by extension)
 
     Returns:
         transcribed text or None
     """
     try:
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
         tmp.write(audio_bytes)
         tmp.close()
         return speech_to_text(tmp.name, language=language)

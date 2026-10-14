@@ -7,7 +7,7 @@ from openai import OpenAI
 from config import OPENAI_API_KEY, SYSTEM_PROMPT
 
 
-def generate_ai_response(user_message, conversation_history=None, mood=None, language="en"):
+def generate_ai_response(user_message, conversation_history=None, mood=None, language="en", face_info=None):
     """
     Generate AI response using OpenAI API
     
@@ -15,6 +15,7 @@ def generate_ai_response(user_message, conversation_history=None, mood=None, lan
         user_message: user's current message
         conversation_history: list of previous messages (optional)
         mood: detected mood (optional)
+        face_info: facial emotion dict from video_emotion (optional)
     
     Returns:
         AI response text
@@ -46,6 +47,17 @@ def generate_ai_response(user_message, conversation_history=None, mood=None, lan
             system += "\n\nRight now the person is struggling. Be especially soft and present. Don't rush to solutions — just be with them first."
         elif mood == "positive":
             system += "\n\nThe person is in a good place. Match their energy — be warm, light, and genuinely happy for them."
+
+        # Inject what we can see on their face (video / camera input)
+        if face_info and face_info.get("emotion") not in (None, "unknown"):
+            system += (
+                f"\n\nYou can also see the person on camera. Their face looks "
+                f"{face_info['emotion']}"
+                + (f" ({face_info['description']})" if face_info.get("description") else "")
+                + ". Respond to what you see as a friend would — naturally, not like a "
+                "report. If their face and their words don't match (e.g. smiling but "
+                "saying they're fine while looking sad), gently notice it."
+            )
 
         messages = [{"role": "system", "content": system}]
 
