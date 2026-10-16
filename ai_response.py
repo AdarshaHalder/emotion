@@ -7,6 +7,42 @@ from openai import OpenAI
 from config import OPENAI_API_KEY, SYSTEM_PROMPT
 
 
+# Unicode ranges → language, to pin the reply language to the user's *latest* message
+_SCRIPT_RANGES = [
+    ((0x0980, 0x09FF), "Bengali"),
+    ((0x0900, 0x097F), "Hindi (or the Devanagari-script language they used)"),
+    ((0x0B80, 0x0BFF), "Tamil"),
+    ((0x0C00, 0x0C7F), "Telugu"),
+    ((0x0A80, 0x0AFF), "Gujarati"),
+    ((0x0A00, 0x0A7F), "Punjabi"),
+    ((0x0600, 0x06FF), "Arabic"),
+    ((0x0400, 0x04FF), "Russian"),
+    ((0xAC00, 0xD7AF), "Korean"),
+    ((0x3040, 0x30FF), "Japanese"),
+    ((0x4E00, 0x9FFF), "Chinese"),
+]
+
+
+def _detect_reply_language(text):
+    """Guess the language of `text` from its dominant script (Latin → English by default)."""
+    counts = {}
+    latin = 0
+    for ch in text or "":
+        cp = ord(ch)
+        if ch.isascii():
+            latin += ch.isalpha()
+            continue
+        for (lo, hi), name in _SCRIPT_RANGES:
+            if lo <= cp <= hi:
+                counts[name] = counts.get(name, 0) + 1
+                break
+    if counts:
+        name, n = max(counts.items(), key=lambda kv: kv[1])
+        if n >= latin:
+            return name
+    return "English (or the Latin-script language they actually used, e.g. Spanish/French)"
+
+
 def generate_ai_response(user_message, conversation_history=None, mood=None, language="en", face_info=None):
     """
     Generate AI response using OpenAI API
@@ -64,6 +100,18 @@ def generate_ai_response(user_message, conversation_history=None, mood=None, lan
         # Add conversation history if provided
         if conversation_history:
             messages.extend(conversation_history)
+
+        # In auto mode, pin the language to THIS message so earlier turns in another
+        # language don't drag the reply along (placed last = strongest signal).
+        if not language or language == "auto":
+            reply_lang = _detect_reply_language(user_message)
+            messages.append({
+                "role": "system",
+                "content": (
+                    f"The user's latest message is in {reply_lang}. Reply ONLY in that "
+                    "language, regardless of what language earlier messages were in."
+                ),
+            })
 
         # Add current user message
         messages.append({"role": "user", "content": user_message})
